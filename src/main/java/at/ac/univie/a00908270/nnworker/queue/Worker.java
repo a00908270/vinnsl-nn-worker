@@ -1,0 +1,67 @@
+package at.ac.univie.a00908270.nnworker.queue;
+
+import at.ac.univie.a00908270.nnworker.dl4j.Dl4jNetworkTrainer;
+import at.ac.univie.a00908270.nnworker.util.NnStatus;
+import at.ac.univie.a00908270.nnworker.util.Vinnsl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import java.io.IOException;
+
+@Component
+public class Worker {
+	
+	private static final Logger log = LoggerFactory.getLogger(Worker.class);
+	
+	@Autowired
+	WorkerQueue workerQueue;
+	
+	@Scheduled(fixedRate = 5000)
+	public void reportCurrentTime() {
+		
+		if (!workerQueue.getQueue().isEmpty()) {
+			
+			String nnId = workerQueue.getQueue().poll();
+			
+			RestTemplate restTemplate = new RestTemplate();
+			Vinnsl vinnslObject = restTemplate.getForObject(String.format("http://127.0.0.1:8080/vinnsl/%s", nnId), Vinnsl.class);
+			restTemplate.put(String.format("http://127.0.0.1:8080/status/%s/%s", nnId, NnStatus.INPROGRESS), null);
+			
+			log.info("STARTING TRAINING OF " + nnId + vinnslObject);
+			
+			boolean isError = false;
+			
+			try {
+				new Dl4jNetworkTrainer(vinnslObject);
+			} catch (IOException e) {
+				isError = true;
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				isError = true;
+				e.printStackTrace();
+			}
+			/*
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}*/
+			
+			log.info("FINISHED TRAINING OF " + nnId + vinnslObject);
+			
+			if (!isError) {
+				restTemplate.put(String.format("http://127.0.0.1:8080/status/%s/%s", nnId, NnStatus.FINISHED), null);
+			} else {
+				restTemplate.put(String.format("http://127.0.0.1:8080/status/%s/%s", nnId, NnStatus.ERROR), null);
+			}
+		} else {
+			if (log.isDebugEnabled()) {
+				log.debug("nothing to do");
+			}
+		}
+	}
+}

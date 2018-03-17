@@ -1,3 +1,5 @@
+package at.ac.univie.a00908270.nnworker.util;
+
 import at.ac.univie.a00908270.vinnsl.schema.*;
 
 import javax.xml.bind.annotation.XmlElement;

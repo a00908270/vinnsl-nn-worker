@@ -1,3 +1,5 @@
+package at.ac.univie.a00908270.nnworker.util;
+
 public class NnCloud {
 	protected NnStatus status;
 	

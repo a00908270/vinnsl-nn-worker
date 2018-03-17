@@ -1,3 +1,7 @@
+package at.ac.univie.a00908270.nnworker.dl4j;
+
+import at.ac.univie.a00908270.nnworker.util.Vinnsl;
+import at.ac.univie.a00908270.nnworker.vinnsl.transformation.VinnslDL4JMapper;
 import org.datavec.api.records.reader.RecordReader;
 import org.datavec.api.records.reader.impl.csv.CSVRecordReader;
 import org.datavec.api.split.FileSplit;
@@ -13,7 +17,6 @@ import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.deeplearning4j.ui.api.UIServer;
 import org.deeplearning4j.ui.stats.StatsListener;
 import org.deeplearning4j.ui.storage.InMemoryStatsStorage;
-import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
@@ -24,7 +27,6 @@ import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.File;
 import java.io.IOException;
 
 public class NNTest {
@@ -124,14 +126,11 @@ public class NNTest {
 		
 		model.init();
 		
-		File locationToSave = new File("MyMultiLayerNetwork.zip");      //Where to save the network. Note: the file is in .zip format - can be opened externally
+		/*File locationToSave = new File("MyMultiLayerNetwork.zip");      //Where to save the network. Note: the file is in .zip format - can be opened externally
 		boolean saveUpdater = true;                                             //Updater: i.e., the state for Momentum, RMSProp, Adagrad etc. Save this if you want to train your network more in the future
-		ModelSerializer.writeModel(model, locationToSave, saveUpdater);
+		ModelSerializer.writeModel(model, locationToSave, saveUpdater);*/
 		
 		model.fit(trainingData);
-		
-		locationToSave = new File("MyMultiLayerNetwork2.zip");      //Where to save the network. Note: the file is in .zip format - can be opened externally
-		ModelSerializer.writeModel(model, locationToSave, saveUpdater);
 		
 		INDArray output = model.output(testData.getFeatureMatrix());
 		System.out.println(output);

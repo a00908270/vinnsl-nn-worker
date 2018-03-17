@@ -1,3 +1,6 @@
+package at.ac.univie.a00908270.nnworker.vinnsl.transformation;
+
+import at.ac.univie.a00908270.nnworker.util.Vinnsl;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
