@@ -9,6 +9,7 @@ import org.datavec.api.split.FileSplit;
 import org.datavec.api.util.ClassPathResource;
 import org.deeplearning4j.api.storage.StatsStorage;
 import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
+import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
@@ -25,23 +26,35 @@ import org.nd4j.linalg.dataset.SplitTestAndTrain;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
 import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize;
-import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 
 public class Dl4jNetworkTrainer {
 	
 	private static final int CLASSES_COUNT = 3;
 	private static final int FEATURES_COUNT = 4;
 	
+	private static final String VINNSL_SERVICE = "http://127.0.0.1:8080/vinnsl/";
+	
+	
 	private static final Logger log = LoggerFactory.getLogger(Dl4jNetworkTrainer.class);
 	
 	public Dl4jNetworkTrainer(Vinnsl vinnslObject) throws IOException, InterruptedException {
 		
 		NeuralNetConfiguration.Builder builder = VinnslDL4JMapper.INSTANCE.neuralNetConfiguration(vinnslObject);
-		log.info(builder.toString());
 		
 		MultiLayerConfiguration configuration = builder
 				.list()
@@ -49,11 +62,15 @@ public class Dl4jNetworkTrainer {
 						.build())
 				.layer(1, new DenseLayer.Builder().nIn(3).nOut(3)
 						.build())
-				.layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+				.layer(2, new OutputLayer.Builder()
 						.activation(Activation.SOFTMAX)
 						.nIn(3).nOut(CLASSES_COUNT).build())
 				.backprop(true).pretrain(false)
 				.build();
+		
+		log.info(builder.toString());
+		RestTemplate restTemplate = new RestTemplate();
+		restTemplate.put(String.format("http://127.0.0.1:8080/dl4j/%s", vinnslObject.identifier), configuration.toJson());
 		
 		UIServer uiServer = UIServer.getInstance();
 		StatsStorage statsStorage = new InMemoryStatsStorage();
@@ -86,9 +103,51 @@ public class Dl4jNetworkTrainer {
 		
 		INDArray output = model.output(testData.getFeatureMatrix());
 		
-		vinnslObject.result.setTable(new Resultschema.Table().getInputAndOutput().add(output.toString()));
+		LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
 		
-		log.info(output.toString());
+		StringBuilder outputFileString = new StringBuilder();
+		outputFileString.append(output.toString());
+		outputFileString.append("\n");
 		
+		Evaluation eval = new Evaluation(3);
+		eval.eval(testData.getLabels(), output);
+		outputFileString.append(eval.stats());
+		
+		InputStream stream = new ByteArrayInputStream(outputFileString.toString().getBytes(StandardCharsets.UTF_8));
+		
+		
+		map.add("file", new MultipartInputStreamFileResource(stream, "result.txt"));
+		
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+		HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new HttpEntity<>(map, headers);
+		restTemplate = new RestTemplate();
+		ResponseEntity<HashMap> entity = restTemplate.postForEntity("http://127.0.0.1:8081/storage/upload", requestEntity, HashMap.class);
+		log.info(entity.getBody().get("file").toString());
+		
+		Resultschema result = new Resultschema();
+		result.setFile(entity.getBody().get("file").toString());
+		
+		restTemplate.put(String.format("http://127.0.0.1:8080/vinnsl/%s/resultschema", vinnslObject.identifier), result);
+	}
+	
+	class MultipartInputStreamFileResource extends InputStreamResource {
+		
+		private final String filename;
+		
+		MultipartInputStreamFileResource(InputStream inputStream, String filename) {
+			super(inputStream);
+			this.filename = filename;
+		}
+		
+		@Override
+		public String getFilename() {
+			return this.filename;
+		}
+		
+		@Override
+		public long contentLength() throws IOException {
+			return -1; // we do not want to generally read the whole stream into memory ...
+		}
 	}
 }

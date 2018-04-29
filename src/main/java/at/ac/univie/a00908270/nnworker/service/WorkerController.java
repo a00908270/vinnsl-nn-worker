@@ -19,11 +19,17 @@ public class WorkerController {
 	WorkerQueue workerQueue;
 	
 	@GetMapping(value = "/queue")
+	/**
+	 * list neural networks IDs currently in queue
+	 */
 	public ResponseEntity<Queue<String>> getWorkingQueue() {
 		return ResponseEntity.ok().body(workerQueue.getQueue());
 	}
 	
 	@PutMapping(value = "/queue/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+	/**
+	 * add neural networks IDs to training queue
+	 */
 	public ResponseEntity<Queue<String>> addToWorkingQueue(@PathVariable("id") String id) {
 		workerQueue.getQueue().add(id);
 		

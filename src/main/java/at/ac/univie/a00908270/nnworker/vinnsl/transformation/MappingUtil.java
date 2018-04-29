@@ -4,6 +4,7 @@ import at.ac.univie.a00908270.vinnsl.schema.Parametervalue;
 import org.mapstruct.Qualifier;
 import org.nd4j.linalg.activations.IActivation;
 import org.nd4j.linalg.activations.impl.ActivationSigmoid;
+import org.nd4j.linalg.activations.impl.ActivationTanH;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -15,7 +16,7 @@ public class MappingUtil {
 	// learningrate -> learningRate
 	// momentum -> momentum
 	// biasInput -> biasInit
-	// epochs -> numIterations
+	// iterations -> numIterations
 	// threshold -> gradientNormalizationThreshold
 	// activationfunction -> (ENUM) activationFn
 	
@@ -104,7 +105,7 @@ public class MappingUtil {
 		
 		Parametervalue.Valueparameter param = ((Parametervalue.Valueparameter) (in.stream()
 				.filter(e -> e instanceof Parametervalue.Valueparameter)
-				.filter(e -> ((Parametervalue.Valueparameter) e).getName().equals("epochs"))
+				.filter(e -> ((Parametervalue.Valueparameter) e).getName().equals("iterations"))
 				.findFirst().orElse(null)));
 		
 		if (param != null) {
@@ -140,6 +141,9 @@ public class MappingUtil {
 		if (param != null) {
 			if ("sigmoid".equalsIgnoreCase(param.getValue())) {
 				return new ActivationSigmoid();
+			}
+			if ("tanh".equalsIgnoreCase(param.getValue())) {
+				return new ActivationTanH();
 			}
 		}
 		
