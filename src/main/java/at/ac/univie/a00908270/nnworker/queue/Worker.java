@@ -17,6 +17,9 @@ public class Worker {
 	
 	private static final Logger log = LoggerFactory.getLogger(Worker.class);
 	
+	//private static final String VINNSL_SERVICE_ENDPOINT = "http://127.0.0.1:8080";
+	private static final String VINNSL_SERVICE_ENDPOINT = "http://vinnsl-service:8080";
+	
 	@Autowired
 	WorkerQueue workerQueue;
 	
@@ -28,8 +31,8 @@ public class Worker {
 			String nnId = workerQueue.getQueue().poll();
 			
 			RestTemplate restTemplate = new RestTemplate();
-			Vinnsl vinnslObject = restTemplate.getForObject(String.format("http://127.0.0.1:8080/vinnsl/%s", nnId), Vinnsl.class);
-			restTemplate.put(String.format("http://127.0.0.1:8080/status/%s/%s", nnId, NnStatus.INPROGRESS), null);
+			Vinnsl vinnslObject = restTemplate.getForObject(String.format(VINNSL_SERVICE_ENDPOINT + "/vinnsl/%s", nnId), Vinnsl.class);
+			restTemplate.put(String.format(VINNSL_SERVICE_ENDPOINT + "/status/%s/%s", nnId, NnStatus.INPROGRESS), null);
 			
 			log.info("STARTING TRAINING OF " + nnId + vinnslObject);
 			
@@ -54,9 +57,9 @@ public class Worker {
 			log.info("FINISHED TRAINING OF " + nnId + vinnslObject);
 			
 			if (!isError) {
-				restTemplate.put(String.format("http://127.0.0.1:8080/status/%s/%s", nnId, NnStatus.FINISHED), null);
+				restTemplate.put(String.format(VINNSL_SERVICE_ENDPOINT + "/status/%s/%s", nnId, NnStatus.FINISHED), null);
 			} else {
-				restTemplate.put(String.format("http://127.0.0.1:8080/status/%s/%s", nnId, NnStatus.ERROR), null);
+				restTemplate.put(String.format(VINNSL_SERVICE_ENDPOINT + "/status/%s/%s", nnId, NnStatus.ERROR), null);
 			}
 		} else {
 			if (log.isDebugEnabled()) {

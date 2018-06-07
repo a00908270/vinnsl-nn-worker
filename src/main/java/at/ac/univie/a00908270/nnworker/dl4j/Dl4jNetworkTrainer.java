@@ -3,10 +3,10 @@ package at.ac.univie.a00908270.nnworker.dl4j;
 import at.ac.univie.a00908270.nnworker.util.Vinnsl;
 import at.ac.univie.a00908270.nnworker.vinnsl.transformation.VinnslDL4JMapper;
 import at.ac.univie.a00908270.vinnsl.schema.Resultschema;
+import org.apache.commons.io.FileUtils;
 import org.datavec.api.records.reader.RecordReader;
 import org.datavec.api.records.reader.impl.csv.CSVRecordReader;
 import org.datavec.api.split.FileSplit;
-import org.datavec.api.util.ClassPathResource;
 import org.deeplearning4j.api.storage.StatsStorage;
 import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
 import org.deeplearning4j.eval.Evaluation;
@@ -31,12 +31,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -47,7 +49,13 @@ public class Dl4jNetworkTrainer {
 	private static final int CLASSES_COUNT = 3;
 	private static final int FEATURES_COUNT = 4;
 	
-	private static final String VINNSL_SERVICE = "http://127.0.0.1:8080/vinnsl/";
+	//private static final String VINNSL_SERVICE_ENDPOINT = "http://127.0.0.1:8080/vinnsl";
+	//private static final String VINNSL_SERVICE_DL4J_ENDPOINT = "http://127.0.0.1:8080/dl4j";
+	//private static final String VINNSL_STORAGE_SERVICE_ENDPOINT = "http://127.0.0.1:8081/storage";
+	
+	private static final String VINNSL_SERVICE_ENDPOINT = "http://vinnsl-service:8080/vinnsl";
+	private static final String VINNSL_SERVICE_DL4J_ENDPOINT = "http://vinnsl-service:8080/dl4j";
+	private static final String VINNSL_STORAGE_SERVICE_ENDPOINT = "http://vinnsl-storage-service:8081/storage";
 	
 	
 	private static final Logger log = LoggerFactory.getLogger(Dl4jNetworkTrainer.class);
@@ -70,17 +78,32 @@ public class Dl4jNetworkTrainer {
 		
 		log.info(builder.toString());
 		RestTemplate restTemplate = new RestTemplate();
-		restTemplate.put(String.format("http://127.0.0.1:8080/dl4j/%s", vinnslObject.identifier), configuration.toJson());
+		restTemplate.put(String.format(VINNSL_SERVICE_DL4J_ENDPOINT + "/%s", vinnslObject.identifier), configuration.toJson());
 		
 		UIServer uiServer = UIServer.getInstance();
 		StatsStorage statsStorage = new InMemoryStatsStorage();
 		
 		DataSet allData;
+		
+		
+		ResponseEntity<byte[]> response = restTemplate.getForEntity(
+				String.format(VINNSL_STORAGE_SERVICE_ENDPOINT + "/files/%s", vinnslObject.definition.getData().getDataSchemaID()),
+				byte[].class);
+		
+		File tmpFile = File.createTempFile("iris", "txt");
+		if (response.getStatusCode() == HttpStatus.OK) {
+			
+			FileUtils.writeByteArrayToFile(tmpFile, response.getBody());
+		}
+		
 		try (RecordReader recordReader = new CSVRecordReader(0, ',')) {
-			recordReader.initialize(new FileSplit(new ClassPathResource("iris.txt").getFile()));
+			recordReader.initialize(new FileSplit(tmpFile));
+			//recordReader.initialize(new FileSplit(new ClassPathResource("iris.txt").getFile()));
 			
 			DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, 150, FEATURES_COUNT, CLASSES_COUNT);
 			allData = iterator.next();
+		} finally {
+			tmpFile.delete();
 		}
 		
 		allData.shuffle(42);
@@ -122,13 +145,13 @@ public class Dl4jNetworkTrainer {
 		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 		HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new HttpEntity<>(map, headers);
 		restTemplate = new RestTemplate();
-		ResponseEntity<HashMap> entity = restTemplate.postForEntity("http://127.0.0.1:8081/storage/upload", requestEntity, HashMap.class);
+		ResponseEntity<HashMap> entity = restTemplate.postForEntity(VINNSL_STORAGE_SERVICE_ENDPOINT + "/upload", requestEntity, HashMap.class);
 		log.info(entity.getBody().get("file").toString());
 		
 		Resultschema result = new Resultschema();
 		result.setFile(entity.getBody().get("file").toString());
 		
-		restTemplate.put(String.format("http://127.0.0.1:8080/vinnsl/%s/resultschema", vinnslObject.identifier), result);
+		restTemplate.put(String.format(VINNSL_SERVICE_ENDPOINT + "/%s/resultschema", vinnslObject.identifier), result);
 	}
 	
 	class MultipartInputStreamFileResource extends InputStreamResource {
