@@ -3,6 +3,7 @@ package at.ac.univie.a00908270.nnworker.vinnsl.transformation;
 import at.ac.univie.a00908270.vinnsl.schema.Parametervalue;
 import org.mapstruct.Qualifier;
 import org.nd4j.linalg.activations.IActivation;
+import org.nd4j.linalg.activations.impl.ActivationReLU;
 import org.nd4j.linalg.activations.impl.ActivationSigmoid;
 import org.nd4j.linalg.activations.impl.ActivationTanH;
 
@@ -55,6 +56,12 @@ public class MappingUtil {
 	@Target(ElementType.METHOD)
 	@Retention(RetentionPolicy.SOURCE)
 	public static @interface ActivationFn {
+	}
+	
+	@Qualifier
+	@Target(ElementType.METHOD)
+	@Retention(RetentionPolicy.SOURCE)
+	public static @interface Seed {
 	}
 	
 	@LearningRate
@@ -130,6 +137,21 @@ public class MappingUtil {
 		return 0d;
 	}
 	
+	@Seed
+	public Long seed(java.util.List<java.lang.Object> in) {
+		
+		Parametervalue.Valueparameter param = ((Parametervalue.Valueparameter) (in.stream()
+				.filter(e -> e instanceof Parametervalue.Valueparameter)
+				.filter(e -> ((Parametervalue.Valueparameter) e).getName().equals("seed"))
+				.findFirst().orElse(null)));
+		
+		if (param != null) {
+			return param.getValue().longValue();
+		}
+		
+		return 0l;
+	}
+	
 	@ActivationFn
 	public IActivation activationFn(java.util.List<java.lang.Object> in) {
 		
@@ -145,8 +167,13 @@ public class MappingUtil {
 			if ("tanh".equalsIgnoreCase(param.getValue())) {
 				return new ActivationTanH();
 			}
+			if ("relu".equalsIgnoreCase(param.getValue())) {
+				return new ActivationReLU();
+			}
 		}
 		
 		return null;
 	}
+	
+	
 }

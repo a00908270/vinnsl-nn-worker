@@ -1,8 +1,11 @@
 package at.ac.univie.a00908270.nnworker.queue;
 
+import at.ac.univie.a00908270.nnworker.dl4j.Dl4jMnistNetworkTrainer;
 import at.ac.univie.a00908270.nnworker.dl4j.Dl4jNetworkTrainer;
 import at.ac.univie.a00908270.nnworker.util.NnStatus;
 import at.ac.univie.a00908270.nnworker.util.Vinnsl;
+import at.ac.univie.a00908270.vinnsl.schema.Parametervalue;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +20,7 @@ public class Worker {
 	
 	private static final Logger log = LoggerFactory.getLogger(Worker.class);
 	
-	//private static final String VINNSL_SERVICE_ENDPOINT = "http://127.0.0.1:8080";
+	//	private static final String VINNSL_SERVICE_ENDPOINT = "http://127.0.0.1:8080";
 	private static final String VINNSL_SERVICE_ENDPOINT = "http://vinnsl-service:8080";
 	
 	@Autowired
@@ -39,7 +42,18 @@ public class Worker {
 			boolean isError = false;
 			
 			try {
-				new Dl4jNetworkTrainer(vinnslObject);
+				
+				Parametervalue.Comboparameter specialWorkerClass = ((Parametervalue.Comboparameter) (vinnslObject.definition.getParameters().getValueparameterOrBoolparameterOrComboparameter().stream()
+						.filter(e -> e instanceof Parametervalue.Comboparameter)
+						.filter(e -> ((Parametervalue.Comboparameter) e).getName().equals("dl4jTrainerClass"))
+						.findFirst().orElse(null)));
+				
+				if (specialWorkerClass != null && StringUtils.equalsIgnoreCase("at.ac.univie.a00908270.nnworker.dl4j.Dl4jMnistNetworkTrainer", specialWorkerClass.getValue())) {
+					new Dl4jMnistNetworkTrainer(vinnslObject);
+				} else {
+					
+					new Dl4jNetworkTrainer(vinnslObject);
+				}
 			} catch (IOException e) {
 				isError = true;
 				e.printStackTrace();

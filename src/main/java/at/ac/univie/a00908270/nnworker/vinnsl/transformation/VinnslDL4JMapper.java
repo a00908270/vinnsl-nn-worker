@@ -34,7 +34,8 @@ public interface VinnslDL4JMapper {
 			@Mapping(source = "vinnsl.definition.parameters.valueparameterOrBoolparameterOrComboparameter", target = "biasInit", qualifiedBy = MappingUtil.BiasInit.class),
 			@Mapping(source = "vinnsl.definition.parameters.valueparameterOrBoolparameterOrComboparameter", target = "numIterations", qualifiedBy = MappingUtil.NumIterations.class),
 			@Mapping(source = "vinnsl.definition.parameters.valueparameterOrBoolparameterOrComboparameter", target = "gradientNormalizationThreshold", qualifiedBy = MappingUtil.GradientNormalizationThreshold.class),
-			@Mapping(source = "vinnsl.definition.parameters.valueparameterOrBoolparameterOrComboparameter", target = "activationFn", qualifiedBy = MappingUtil.ActivationFn.class)
+			@Mapping(source = "vinnsl.definition.parameters.valueparameterOrBoolparameterOrComboparameter", target = "activationFn", qualifiedBy = MappingUtil.ActivationFn.class),
+			@Mapping(source = "vinnsl.definition.parameters.valueparameterOrBoolparameterOrComboparameter", target = "seed", qualifiedBy = MappingUtil.Seed.class)
 	})
 	NeuralNetConfiguration.Builder neuralNetConfiguration(Vinnsl vinnsl);
 	

@@ -35,6 +35,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.StopWatch;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayInputStream;
@@ -48,10 +49,10 @@ public class Dl4jNetworkTrainer {
 	
 	private static final int CLASSES_COUNT = 3;
 	private static final int FEATURES_COUNT = 4;
-	
-	//private static final String VINNSL_SERVICE_ENDPOINT = "http://127.0.0.1:8080/vinnsl";
-	//private static final String VINNSL_SERVICE_DL4J_ENDPOINT = "http://127.0.0.1:8080/dl4j";
-	//private static final String VINNSL_STORAGE_SERVICE_ENDPOINT = "http://127.0.0.1:8081/storage";
+
+//	private static final String VINNSL_SERVICE_ENDPOINT = "http://127.0.0.1:8080/vinnsl";
+//	private static final String VINNSL_SERVICE_DL4J_ENDPOINT = "http://127.0.0.1:8080/dl4j";
+//	private static final String VINNSL_STORAGE_SERVICE_ENDPOINT = "http://127.0.0.1:8081/storage";
 	
 	private static final String VINNSL_SERVICE_ENDPOINT = "http://vinnsl-service:8080/vinnsl";
 	private static final String VINNSL_SERVICE_DL4J_ENDPOINT = "http://vinnsl-service:8080/dl4j";
@@ -122,7 +123,14 @@ public class Dl4jNetworkTrainer {
 		
 		model.init();
 		
+		log.info("Train model....");
+		StopWatch stopWatch = new StopWatch();
+		stopWatch.start();
+		
 		model.fit(trainingData);
+		
+		stopWatch.stop();
+		log.info("Taining took " + stopWatch.getTotalTimeSeconds());
 		
 		INDArray output = model.output(testData.getFeatureMatrix());
 		
@@ -135,6 +143,9 @@ public class Dl4jNetworkTrainer {
 		Evaluation eval = new Evaluation(3);
 		eval.eval(testData.getLabels(), output);
 		outputFileString.append(eval.stats());
+		outputFileString.append("\n");
+		outputFileString.append("Training took " + stopWatch.getTotalTimeSeconds());
+		outputFileString.append("\n");
 		
 		InputStream stream = new ByteArrayInputStream(outputFileString.toString().getBytes(StandardCharsets.UTF_8));
 		
