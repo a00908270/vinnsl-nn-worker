@@ -1,7 +1,5 @@
 package at.ac.univie.a00908270.nnworker.dl4j;
 
-import at.ac.univie.a00908270.nnworker.util.Vinnsl;
-import at.ac.univie.a00908270.nnworker.vinnsl.transformation.VinnslDL4JMapper;
 import org.datavec.api.records.reader.RecordReader;
 import org.datavec.api.records.reader.impl.csv.CSVRecordReader;
 import org.datavec.api.split.FileSplit;
@@ -25,23 +23,22 @@ import org.nd4j.linalg.dataset.SplitTestAndTrain;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
 import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 
-public class NNTest {
+public class NNTest2 {
 	private static final int CLASSES_COUNT = 3;
 	private static final int FEATURES_COUNT = 4;
 	
 	public static void main(String[] args) throws IOException, InterruptedException {
 		
-		String clusterid = "5ac728f8b6add3e7e6788ca6";
+	/*	String clusterid = "5ac728f8b6add3e7e6788ca6";
 		
 		RestTemplate restTemplate = new RestTemplate();
 		Vinnsl vinnslObject = restTemplate.getForObject(String.format("http://127.0.0.1:8080/vinnsl/%s", clusterid), Vinnsl.class);
 		
 		restTemplate.put(String.format("http://127.0.0.1:8080/status/%s/INPROGRESS", clusterid), null);
-		
+		*/
 		/*HashMap<String, Object> parameters = new HashMap<>();
 		for () {
 		
@@ -57,10 +54,10 @@ public class NNTest {
 		conf.layer(new DenseLayer.Builder().nIn(3).nOut(3)
 				.build());*/
 		
-		NeuralNetConfiguration.Builder builder = VinnslDL4JMapper.INSTANCE.neuralNetConfiguration(vinnslObject);
+		//NeuralNetConfiguration.Builder builder = VinnslDL4JMapper.INSTANCE.neuralNetConfiguration(vinnslObject);
 		//System.out.println(builder);
 		
-		MultiLayerConfiguration configuration = builder//new NeuralNetConfiguration.Builder()//builder
+		MultiLayerConfiguration configuration = new NeuralNetConfiguration.Builder()//builder
 				//.weightInit(WeightInit.XAVIER)
 				//.regularization(true).l2(0.0001)
 				.list()
@@ -74,7 +71,7 @@ public class NNTest {
 				.backprop(true).pretrain(false)
 				.build();
 		
-		restTemplate.put(String.format("http://127.0.0.1:8080/dl4j/%s", clusterid), configuration.toJson());
+		//restTemplate.put(String.format("http://127.0.0.1:8080/dl4j/%s", clusterid), configuration.toJson());
 		
 		UIServer uiServer = UIServer.getInstance();
 		StatsStorage statsStorage = new InMemoryStatsStorage();
@@ -141,7 +138,7 @@ public class NNTest {
 		eval.eval(testData.getLabels(), output);
 		System.out.println(eval.stats());
 		
-		restTemplate.put(String.format("http://127.0.0.1:8080/status/%s/FINISHED", clusterid), null);
+		//restTemplate.put(String.format("http://127.0.0.1:8080/status/%s/FINISHED", clusterid), null);
 		
 	}
 }

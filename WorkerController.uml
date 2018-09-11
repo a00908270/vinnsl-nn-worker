@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>at.ac.univie.a00908270.nnworker.service.WorkerController</OriginalElement>
+  <nodes>
+    <node x="1417.1602564102564" y="45.0">at.ac.univie.a00908270.nnworker.util.NnStatus</node>
+    <node x="0.0" y="438.0">at.ac.univie.a00908270.nnworker.vinnsl.transformation.VinnslDL4JMapperImpl</node>
+    <node x="762.0929487179487" y="89.0">at.ac.univie.a00908270.nnworker.queue.WorkerQueue</node>
+    <node x="276.75" y="301.5">at.ac.univie.a00908270.nnworker.vinnsl.transformation.VinnslDL4JMapper</node>
+    <node x="1426.8429487179487" y="290.0">at.ac.univie.a00908270.nnworker.util.NnCloud</node>
+    <node x="949.8429487179487" y="290.0">at.ac.univie.a00908270.nnworker.service.WorkerController</node>
+    <node x="454.0929487179487" y="0.0">at.ac.univie.a00908270.nnworker.util.Vinnsl</node>
+    <node x="688.8429487179487" y="290.5">at.ac.univie.a00908270.nnworker.queue.Worker</node>
+    <node x="1101.8429487179487" y="89.0">org.springframework.web.bind.annotation.RestController</node>
+    <node x="31.092948717948616" y="34.0">at.ac.univie.a00908270.nnworker.vinnsl.transformation.MappingUtil</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="at.ac.univie.a00908270.nnworker.vinnsl.transformation.VinnslDL4JMapperImpl" target="at.ac.univie.a00908270.nnworker.vinnsl.transformation.VinnslDL4JMapper">
+      <point x="85.75" y="-48.5" />
+      <point x="428.75" y="413.0" />
+      <point x="431.75" y="413.0" />
+      <point x="0.0" y="37.5" />
+    </edge>
+    <edge source="at.ac.univie.a00908270.nnworker.service.WorkerController" target="at.ac.univie.a00908270.nnworker.queue.WorkerQueue">
+      <point x="-152.33333333333348" y="-49.0" />
+      <point x="1026.0096153846152" y="250.0" />
+      <point x="903.8429487179487" y="250.0" />
+      <point x="47.25" y="26.0" />
+    </edge>
+    <edge source="at.ac.univie.a00908270.nnworker.vinnsl.transformation.VinnslDL4JMapperImpl" target="at.ac.univie.a00908270.nnworker.util.Vinnsl">
+      <point x="257.25" y="-48.5" />
+      <point x="600.25" y="413.0" />
+      <point x="598.0929487179487" y="413.0" />
+      <point x="0.0" y="115.0" />
+    </edge>
+    <edge source="at.ac.univie.a00908270.nnworker.queue.Worker" target="at.ac.univie.a00908270.nnworker.util.NnStatus">
+      <point x="80.33333333333337" y="-48.5" />
+      <point x="889.676282051282" y="260.0" />
+      <point x="1432.2852564102564" y="260.0" />
+      <point x="-45.375" y="70.0" />
+    </edge>
+    <edge source="at.ac.univie.a00908270.nnworker.service.WorkerController" target="at.ac.univie.a00908270.nnworker.util.NnStatus">
+      <point x="152.33333333333326" y="-49.0" />
+      <point x="1330.6762820512818" y="270.0" />
+      <point x="1462.5352564102564" y="270.0" />
+      <point x="-15.125" y="70.0" />
+    </edge>
+    <edge source="at.ac.univie.a00908270.nnworker.queue.Worker" target="at.ac.univie.a00908270.nnworker.queue.WorkerQueue">
+      <point x="0.0" y="-48.5" />
+      <point x="-47.25" y="26.0" />
+    </edge>
+    <edge source="at.ac.univie.a00908270.nnworker.util.NnCloud" target="at.ac.univie.a00908270.nnworker.util.NnStatus">
+      <point x="46.25" y="-49.0" />
+      <point x="1565.5929487179487" y="270.0" />
+      <point x="1523.0352564102564" y="270.0" />
+      <point x="45.375" y="70.0" />
+    </edge>
+    <edge source="at.ac.univie.a00908270.nnworker.vinnsl.transformation.VinnslDL4JMapperImpl" target="at.ac.univie.a00908270.nnworker.vinnsl.transformation.MappingUtil">
+      <point x="-85.75" y="-48.5" />
+      <point x="257.25" y="413.0" />
+      <point x="232.59294871794862" y="413.0" />
+      <point x="0.0" y="81.0" />
+    </edge>
+    <edge source="at.ac.univie.a00908270.nnworker.service.WorkerController" target="org.springframework.web.bind.annotation.RestController">
+      <point x="0.0" y="-49.0" />
+      <point x="0.0" y="26.0" />
+    </edge>
+    <edge source="at.ac.univie.a00908270.nnworker.queue.Worker" target="at.ac.univie.a00908270.nnworker.util.Vinnsl">
+      <point x="-80.33333333333326" y="-48.5" />
+      <point x="729.0096153846155" y="270.0" />
+      <point x="694.0929487179487" y="270.0" />
+      <point x="96.0" y="115.0" />
+    </edge>
+    <edge source="at.ac.univie.a00908270.nnworker.vinnsl.transformation.VinnslDL4JMapper" target="at.ac.univie.a00908270.nnworker.vinnsl.transformation.MappingUtil">
+      <point x="-77.5" y="-37.5" />
+      <point x="354.25" y="270.0" />
+      <point x="366.926282051282" y="270.0" />
+      <point x="134.33333333333337" y="81.0" />
+    </edge>
+    <edge source="at.ac.univie.a00908270.nnworker.vinnsl.transformation.VinnslDL4JMapper" target="at.ac.univie.a00908270.nnworker.util.Vinnsl">
+      <point x="77.5" y="-37.5" />
+      <point x="509.25" y="270.0" />
+      <point x="502.0929487179487" y="270.0" />
+      <point x="-96.0" y="115.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="0.8813559322033898" x="747.0" y="210.5" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Properties</Category>
+    <Category>Methods</Category>
+    <Category>Constructors</Category>
+    <Category>Fields</Category>
+  </Categories>
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

@@ -4,7 +4,6 @@ import at.ac.univie.a00908270.nnworker.dataset.MnistFetcher;
 import at.ac.univie.a00908270.nnworker.util.Vinnsl;
 import at.ac.univie.a00908270.nnworker.vinnsl.transformation.VinnslDL4JMapper;
 import at.ac.univie.a00908270.vinnsl.schema.Resultschema;
-import com.sun.javafx.binding.StringFormatter;
 import org.deeplearning4j.api.storage.StatsStorage;
 import org.deeplearning4j.datasets.iterator.impl.MnistDataSetIterator;
 import org.deeplearning4j.eval.Evaluation;
@@ -119,7 +118,7 @@ public class Dl4jMnistNetworkTrainer {
 		}
 		
 		stopWatch.stop();
-		log.info("Taining took " + stopWatch.getTotalTimeSeconds());
+		log.info("Training took " + stopWatch.getTotalTimeSeconds());
 		
 		log.info("Evaluate model....");
 		LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
@@ -132,15 +131,16 @@ public class Dl4jMnistNetworkTrainer {
 			INDArray output = model.output(next.getFeatures()); //get the networks prediction
 			eval.eval(next.getLabels(), output); //check the prediction against the true class
 			
-			outputFileString.append(StringFormatter.format("\nIteration #%d \n", mnistTest.cursor()));
+			outputFileString.append(String.format("\nIteration #%d \n", mnistTest.cursor()));
 			outputFileString.append(output.toString());
 			outputFileString.append("\n");
 			outputFileString.append(eval.stats());
 			outputFileString.append("\n");
-			outputFileString.append("Training took " + stopWatch.getTotalTimeSeconds());
-			outputFileString.append("\n");
 		}
 		
+		outputFileString.append("\n");
+		outputFileString.append(String.format("Training took %f seconds", stopWatch.getTotalTimeSeconds()));
+		outputFileString.append("\n");
 		
 		InputStream stream = new ByteArrayInputStream(outputFileString.toString().getBytes(StandardCharsets.UTF_8));
 		
