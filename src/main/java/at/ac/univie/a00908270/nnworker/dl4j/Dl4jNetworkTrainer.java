@@ -2,6 +2,8 @@ package at.ac.univie.a00908270.nnworker.dl4j;
 
 import at.ac.univie.a00908270.nnworker.util.Vinnsl;
 import at.ac.univie.a00908270.nnworker.vinnsl.transformation.VinnslDL4JMapper;
+import at.ac.univie.a00908270.vinnsl.schema.Definition;
+import at.ac.univie.a00908270.vinnsl.schema.Parametervalue;
 import at.ac.univie.a00908270.vinnsl.schema.Resultschema;
 import org.apache.commons.io.FileUtils;
 import org.datavec.api.records.reader.RecordReader;
@@ -40,15 +42,21 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.LineNumberReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Optional;
 
 public class Dl4jNetworkTrainer {
 	
-	private static final int CLASSES_COUNT = 3;
 	private static final int FEATURES_COUNT = 4;
+	private static final int CLASSES_COUNT = 3;
+	private static final int HIDDEN_COUNT = 3;
+	private static final int LABEL_INDEX = 0;
 
 //	private static final String VINNSL_SERVICE_ENDPOINT = "http://127.0.0.1:8080/vinnsl";
 //	private static final String VINNSL_SERVICE_DL4J_ENDPOINT = "http://127.0.0.1:8080/dl4j";
@@ -63,17 +71,25 @@ public class Dl4jNetworkTrainer {
 	
 	public Dl4jNetworkTrainer(Vinnsl vinnslObject) throws IOException, InterruptedException {
 		
+		//initialize with parameters from vinnsl xml
 		NeuralNetConfiguration.Builder builder = VinnslDL4JMapper.INSTANCE.neuralNetConfiguration(vinnslObject);
+		
+		int featuresCount = getFeaturesCount(vinnslObject);
+		int classesCount = getClassesCount(vinnslObject);
+		int hiddenCount = getHiddenCount(vinnslObject);
+		
+		log.info(String.format("Found features: %d, found classes: %d, found hidden classes: %d",
+				featuresCount, classesCount, hiddenCount));
 		
 		MultiLayerConfiguration configuration = builder
 				.list()
-				.layer(0, new DenseLayer.Builder().nIn(FEATURES_COUNT).nOut(3)
+				.layer(0, new DenseLayer.Builder().nIn(featuresCount).nOut(hiddenCount)
 						.build())
-				.layer(1, new DenseLayer.Builder().nIn(3).nOut(3)
+				.layer(1, new DenseLayer.Builder().nIn(hiddenCount).nOut(hiddenCount)
 						.build())
 				.layer(2, new OutputLayer.Builder()
 						.activation(Activation.SOFTMAX)
-						.nIn(3).nOut(CLASSES_COUNT).build())
+						.nIn(hiddenCount).nOut(classesCount).build())
 				.backprop(true).pretrain(false)
 				.build();
 		
@@ -97,11 +113,13 @@ public class Dl4jNetworkTrainer {
 			FileUtils.writeByteArrayToFile(tmpFile, response.getBody());
 		}
 		
+		int batchSize = getBatchSize(tmpFile);
+		
 		try (RecordReader recordReader = new CSVRecordReader(0, ',')) {
 			recordReader.initialize(new FileSplit(tmpFile));
-			//recordReader.initialize(new FileSplit(new ClassPathResource("iris.txt").getFile()));
 			
-			DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, 150, FEATURES_COUNT, CLASSES_COUNT);
+			
+			DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, getLabelIndex(vinnslObject), classesCount);
 			allData = iterator.next();
 		} finally {
 			tmpFile.delete();
@@ -118,7 +136,7 @@ public class Dl4jNetworkTrainer {
 		DataSet testData = testAndTrain.getTest();
 		
 		MultiLayerNetwork model = new MultiLayerNetwork(configuration);
-		model.setListeners(new StatsListener(statsStorage), new ScoreIterationListener(1));
+		model.setListeners(new StatsListener(statsStorage), new ScoreIterationListener(10));
 		uiServer.attach(statsStorage);
 		
 		model.init();
@@ -130,7 +148,7 @@ public class Dl4jNetworkTrainer {
 		model.fit(trainingData);
 		
 		stopWatch.stop();
-		log.info("Taining took " + stopWatch.getTotalTimeSeconds());
+		log.info("Training took " + stopWatch.getTotalTimeSeconds());
 		
 		INDArray output = model.output(testData.getFeatureMatrix());
 		
@@ -140,11 +158,11 @@ public class Dl4jNetworkTrainer {
 		outputFileString.append(output.toString());
 		outputFileString.append("\n");
 		
-		Evaluation eval = new Evaluation(3);
+		Evaluation eval = new Evaluation(classesCount);
 		eval.eval(testData.getLabels(), output);
 		outputFileString.append(eval.stats());
 		outputFileString.append("\n");
-		outputFileString.append("Training took " + stopWatch.getTotalTimeSeconds());
+		outputFileString.append(String.format("Training took %f seconds", stopWatch.getTotalTimeSeconds()));
 		outputFileString.append("\n");
 		
 		InputStream stream = new ByteArrayInputStream(outputFileString.toString().getBytes(StandardCharsets.UTF_8));
@@ -163,6 +181,103 @@ public class Dl4jNetworkTrainer {
 		result.setFile(entity.getBody().get("file").toString());
 		
 		restTemplate.put(String.format(VINNSL_SERVICE_ENDPOINT + "/%s/resultschema", vinnslObject.identifier), result);
+	}
+	
+	private int getBatchSize(File tmpFile) {
+		try {
+			if (tmpFile.exists()) {
+				
+				FileReader fr = null;
+				try {
+					fr = new FileReader(tmpFile);
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
+				LineNumberReader lnr = new LineNumberReader(fr);
+				
+				int linenumber = 0;
+				
+				while (lnr.readLine() != null) {
+					linenumber++;
+				}
+				
+				log.info("Total number of lines : " + linenumber);
+				
+				lnr.close();
+				
+				return linenumber - 1;
+				
+			} else {
+				log.error("File does not exists!");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+	
+	private int getFeaturesCount(Vinnsl vinnslObject) {
+		
+		if (vinnslObject.definition != null) {
+			if (vinnslObject.definition.getStructure() != null) {
+				if (vinnslObject.definition.getStructure().getInput() != null) {
+					if (vinnslObject.definition.getStructure().getInput().getSize() != null) {
+						return vinnslObject.definition.getStructure().getInput().getSize().intValue();
+					}
+				}
+			}
+		}
+		
+		return FEATURES_COUNT;
+	}
+	
+	private int getClassesCount(Vinnsl vinnslObject) {
+		
+		if (vinnslObject.definition != null) {
+			if (vinnslObject.definition.getStructure() != null) {
+				if (vinnslObject.definition.getStructure().getOutput() != null) {
+					if (vinnslObject.definition.getStructure().getOutput().getSize() != null) {
+						return vinnslObject.definition.getStructure().getOutput().getSize().intValue();
+					}
+				}
+			}
+		}
+		
+		return CLASSES_COUNT;
+	}
+	
+	private int getHiddenCount(Vinnsl vinnslObject) {
+		if (vinnslObject.definition != null) {
+			if (vinnslObject.definition.getStructure() != null) {
+				if (vinnslObject.definition.getStructure().getHidden() != null) {
+					Optional<Definition.Structure.Hidden> firstHidden = vinnslObject.definition.getStructure().getHidden().stream().findFirst();
+					if (firstHidden.isPresent()) {
+						if (firstHidden.get().getSize() != null)
+							return firstHidden.get().getSize().intValue();
+					}
+				}
+			}
+		}
+		
+		return HIDDEN_COUNT;
+	}
+	
+	private int getLabelIndex(Vinnsl vinnslObject) {
+		Parametervalue.Valueparameter param = ((Parametervalue.Valueparameter) (vinnslObject.definition.getParameters().getValueparameterOrBoolparameterOrComboparameter().stream()
+				.filter(e -> e instanceof Parametervalue.Valueparameter)
+				.filter(e -> ((Parametervalue.Valueparameter) e).getName().equalsIgnoreCase("labelIndex"))
+				.findFirst().orElse(null)));
+		
+		if (param != null && param.getValue() != null) {
+			try {
+				log.info("labelindex at position: %d", param.getValue().intValue());
+				return param.getValue().intValue();
+			} catch (NumberFormatException e) {
+				log.error("labelIndex not correctly formatted");
+			}
+		}
+		
+		return LABEL_INDEX;
 	}
 	
 	class MultipartInputStreamFileResource extends InputStreamResource {
